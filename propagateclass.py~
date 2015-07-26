@@ -1,0 +1,51 @@
+#Nguyen Chi Huan 24/7/2015
+from __future__ import division # without this, python 2.x will understand 1/2 as 0.0
+import numpy as np
+from gbeam import gbeam
+#a method to destroy objects and release resources after use should be implemented
+def findfocus(beam):
+	stepsize=1*10**-9
+	countstep=0;
+	fp1=freespace(stepsize,1)
+	#a simple way to simulate do while loop in Python
+	# a better way may be to use generators and iterators
+	while True:
+		waist_temp=beam.waist
+		beam=fp1.propagate(beam)
+		countstep+=1
+		if (beam.waist>waist_temp):
+			break
+	print 'distance focus', countstep*stepsize
+	return beam
+class general_element:
+	def __init__(self,abcd,n):
+		self.abcd=abcd
+		self.a=abcd[0,0]
+		self.b=abcd[0,1]
+		self.c=abcd[1,0]
+		self.d=abcd[1,1]
+		self.n=n
+	def givebeam(self,beam):
+		self.beam=beam
+	def propagate(self,beam):
+#		print 'propagate with ABCD elements', self.abcd
+		self.beam=beam
+		self.q1=self.beam.q1
+		self.q2=(self.c+self.d*self.q1)/(self.a+self.b*self.q1)
+		#the task of getting R and waist from complex parameter q can be put into a separate method
+		self.R12=np.real(self.q2)#1/R2
+		self.lamda2=self.beam.lamda/self.n
+		self.waist2=np.sqrt(1/np.imag(self.q2)/3.145*(self.beam.lamda)/(self.n))
+		beam2=gbeam(self.waist2,self.lamda2,self.R12)
+		return beam2
+
+class freespace(general_element):
+	def __init__(self,L,n):
+		self.a=1
+		self.b=L
+		self.c=0
+		self.d=1
+		self.n=n
+
+
+
